@@ -37,7 +37,7 @@
                         <Label Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Количество мусорных байтов в начале:</Label>
                         <Label Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Количество мусорных байтов в конце:</Label>
                         <Label Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Количество байтов данных:</Label>
-                        <Label Content="{Binding FreeBytes}" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"></Label>
+                        <Label Content="{Binding FreeBytesMessage}" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"></Label>
                         <ComboBox ItemsSource="{Binding Bytes}" SelectedIndex="{Binding SelectedIndexTrash1}" Grid.Row="0" Grid.Column="1" Height="22">
                             <i:Interaction.Triggers>
                                 <i:EventTrigger EventName="SelectionChanged">
@@ -76,6 +76,12 @@
                     AA
                 </TextBox>
             </GroupBox>
+        </Grid>
+        <Grid Grid.Row="2" Grid.Column="0" MaxHeight="150">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button FontSize="25" Margin="5, 5, 30, 5" Width="200" Height="50">Старт</Button>
+                <Button FontSize="25" Margin="30, 5, 5, 5"  Width="200" Height="50">Стоп</Button>
+            </StackPanel>
         </Grid>
     </Grid>
 

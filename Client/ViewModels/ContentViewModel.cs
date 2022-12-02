@@ -1,6 +1,8 @@
-﻿using Prism.Mvvm;
+﻿using System.Collections.Generic;
+using Prism.Mvvm;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Documents;
 using Prism.Commands;
 
 namespace Client.ViewModels
@@ -15,11 +17,11 @@ namespace Client.ViewModels
         }
 
         #region Properties
-        private ObservableCollection<int> _bytes = new();
-        public ObservableCollection<int> Bytes { get => _bytes; set => SetProperty(ref _bytes, value); }
+        private List<int> _bytes = new();
+        public List<int> Bytes { get => _bytes; set => SetProperty(ref _bytes, value); }
 
-        private string _freeBytes;
-        public string FreeBytes { get => _freeBytes; set => SetProperty(ref _freeBytes, value); }
+        private string _freeBytesMessage;
+        public string FreeBytesMessage { get => _freeBytesMessage; set => SetProperty(ref _freeBytesMessage, value); }
 
 
         private int _selectedIndexTrash1;
@@ -71,9 +73,9 @@ namespace Client.ViewModels
         {
             int amount = FreeBytesAmount();
             if(amount < 0)
-                FreeBytes = $"Ошибка! Количество оставшихся байтов: {amount}";
+                FreeBytesMessage = $"Ошибка! Уменьшите количество байтов на: {-amount}";
             else
-                FreeBytes = $"Количество оставшихся байтов: {amount}";
+                FreeBytesMessage = $"Количество оставшихся байтов: {amount}";
         }
         #endregion
 
