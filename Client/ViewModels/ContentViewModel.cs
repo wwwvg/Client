@@ -10,6 +10,7 @@ namespace Client.ViewModels
     public class ContentViewModel : BindableBase
     {
         public const int MaxBytes = 256;
+        private bool _isStarted = false;
         public ContentViewModel()
         {
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
@@ -59,7 +60,22 @@ namespace Client.ViewModels
             SetFreeBytesText();
         }
 
-        
+        private DelegateCommand _startCommand;
+        public DelegateCommand StartCommand => _startCommand ?? (_startCommand = new DelegateCommand(ExecuteStartCommand));
+
+        public void ExecuteStartCommand()
+        {
+            
+        }
+
+        private DelegateCommand _stopCommand;
+        public DelegateCommand StopCommand => _stopCommand ?? (_stopCommand = new DelegateCommand(ExecuteStopCommand));
+
+        public void ExecuteStopCommand()
+        {
+
+        }
+
         #endregion
 
         #region Methods
