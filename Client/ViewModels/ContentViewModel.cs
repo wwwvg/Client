@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Documents;
 using Prism.Commands;
 using System.Text;
+using System.Windows.Input;
 
 namespace Client.ViewModels
 {
@@ -18,6 +19,7 @@ namespace Client.ViewModels
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
             IsStarted = false;
             IsStopped = true;
+            _isMaskEnabled = false;
         }
         
         #region Properties
@@ -26,6 +28,9 @@ namespace Client.ViewModels
 
         private string _dataMaskValue; // маска для ввода данных, генерируется в зависимости от кол-ва байт данных;
         public string DataMaskValue { get => _dataMaskValue; set => SetProperty(ref _dataMaskValue, value); }
+
+        private bool _isMaskEnabled;
+        public bool IsMaskEnabled { get => _isMaskEnabled; set => SetProperty(ref _isMaskEnabled, value); }
 
         private bool _isStarted; // нажата ли кнопка старт. Свойство нужно для блокирования/разблокирования других кнопок
         public bool IsStarted { get => _isStarted; set => SetProperty(ref _isStarted, value); }
@@ -84,6 +89,8 @@ namespace Client.ViewModels
         {
             IsStarted = true;
             IsStopped = false;
+            IsMaskEnabled = false;
+
         }
 
         private DelegateCommand _stopCommand;       // СТОП
@@ -94,8 +101,9 @@ namespace Client.ViewModels
         {
             IsStopped = true;
             IsStarted = false;
+            if (DataMaskValue?.Length > 0)
+                IsMaskEnabled = true;
         }
-
         #endregion
 
         #region Methods
@@ -116,7 +124,6 @@ namespace Client.ViewModels
 
         private void GenerateDataMask()
         {
-            string dataMaskValue = DataMaskValue; // сохраняем старое значение из маски данных
             int numberOfBytes = Bytes[SelectedIndexData];
             var maskBuilder = new StringBuilder();
             for (int i = 0; i < numberOfBytes; i++)
@@ -127,8 +134,11 @@ namespace Client.ViewModels
                     maskBuilder.Append(">A>A");
             }
             DataMask = maskBuilder.ToString();
-            //DataMaskValue = dataMaskValue?.Replace(" ", "").Remove(numberOfBytes - 1);
-            DataMaskValue = "AA";
+
+            if (numberOfBytes > 0)
+                IsMaskEnabled = true;
+            else
+                IsMaskEnabled = false;
         }
 
         #endregion

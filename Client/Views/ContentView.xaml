@@ -67,11 +67,10 @@
             </Grid>
 
             <Grid Grid.Row="0" Grid.Column="1">
-
-                <GroupBox Header="Данные" Margin="10"  IsEnabled="{Binding IsStopped}">
-                    <xctk:MaskedTextBox Mask="{Binding DataMask}" Text="{Binding DataMaskValue}">
-
+                <GroupBox Header="Данные" Margin="10"  IsEnabled="{Binding IsMaskEnabled}">
+                    <xctk:MaskedTextBox Mask="{Binding DataMask}" Text="{Binding DataMaskValue}" RestrictToAscii="True" Margin="3" >
                     </xctk:MaskedTextBox>
+                                        
                 </GroupBox>
             </Grid>
         </Grid>
