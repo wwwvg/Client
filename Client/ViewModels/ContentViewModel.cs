@@ -20,17 +20,22 @@ namespace Client.ViewModels
         public const int MaxBytes = 256;
         private IEventAggregator _eventAggregator;
         private IProcessDataService _processDataService;
+        private ITrashGeneratorService _trashGeneratorService;
 
-        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService)  // IProcessDataService - зарегистрирован в App.xaml.cs
+        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService, ITrashGeneratorService trashGeneratorService)  // IProcessDataService - зарегистрирован в App.xaml.cs
         {
             _eventAggregator = eventAggregator;
+
             _processDataService = processDataService;
+            _trashGeneratorService = trashGeneratorService;
+
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
             IsStarted = false;
             IsStopped = true;
             _isMaskEnabled = false;
+            
         }
-        
+
         #region Properties
         private string _dataMask; // маска для ввода данных, генерируется в зависимости от кол-ва байт данных;
         public string DataMask { get => _dataMask; set => SetProperty(ref _dataMask, value); }
@@ -102,6 +107,8 @@ namespace Client.ViewModels
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Данные верны"));
             else
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
+
+            byte[] bytes = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash1]);
 
             //IsStarted = true;
             //IsStopped = false;
