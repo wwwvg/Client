@@ -13,12 +13,15 @@ using Prism.Events;
 using Client.Events;
 using Client.Services.Interfaces;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Windows.Threading;
 
 namespace Client.ViewModels
 {
     public class ContentViewModel : BindableBase
     {
         public const int MaxBytes = 255;
+        DispatcherTimer _timer = new DispatcherTimer(); 
         private IEventAggregator _eventAggregator;
         private IProcessDataService _processDataService;
         private ITrashGeneratorService _trashGeneratorService;
@@ -110,8 +113,21 @@ namespace Client.ViewModels
                                                                                                             .ObservesCanExecute(() => IsStopped);
 
         async public void ExecuteStartCommand()
-        {
+        {          
 
+            IsStarted = true;
+            IsStopped = false;
+            //IsMaskEnabled = false;
+            ResultText = "";
+
+            _timer.Tick += OnTimerTick;
+            _timer.Interval = new TimeSpan(0, 0, 1);
+            _timer.Start();
+        }
+
+        async void OnTimerTick(object sender, EventArgs args)
+        {
+            //ResultText = "";
             bool b = _processDataService.CheckData(DataMaskValue, Bytes[SelectedIndexData], out string errorMessage);
             if (b)
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Данные верны"));
@@ -124,20 +140,21 @@ namespace Client.ViewModels
             byte[] bytes1 = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash1]);
             byte[] bytes2 = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash2]);
 
-            if(_processDataService.GetBytes(DataMaskValue, out byte[] bytesData, Bytes[SelectedIndexData], out string message, _hexConverterService))
+            if (_processDataService.GetBytes(DataMaskValue, out byte[] bytesData, Bytes[SelectedIndexData], out string message, _hexConverterService))
                 PackageText = $"{_hexConverterService.ToHex(bytes1)} {_hexConverterService.ToHex(bytesData)} {_hexConverterService.ToHex(bytes2)}";
             else
                 PackageText = $"{_hexConverterService.ToHex(bytes1)} {_hexConverterService.ToHex(bytes2)}";
 
-            //IsStarted = true;
-            //IsStopped = false;
-            //IsMaskEnabled = false;
-            ResultText = "";
-            byte[] packageBytes = new byte[MaxBytes];
-            packageBytes = bytesData;
-
-            ResultText = await SendData(bytesData);
+            try
+            {
+                ResultText = await SendData(bytesData);
+            }
+            catch(SocketException ex)
+            {
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{ex.Message}"));
+            }
         }
+
 
         async Task<string> SendData(byte[] data)
         {
@@ -159,6 +176,7 @@ namespace Client.ViewModels
 
         public void ExecuteStopCommand()
         {
+            _timer.Stop();
             IsStopped = true;
             IsStarted = false;
             if (DataMaskValue?.Length > 0)
