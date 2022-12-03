@@ -9,21 +9,21 @@
              xmlns:interactivity="http://prismlibrary.com/"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid MinHeight="450">
+    <Grid MinHeight="300">
         <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition/>
-            <RowDefinition/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
 
 
-        <Grid Grid.Row="0" MaxHeight="150" MinHeight="150">
+        <Grid Grid.Row="0" MaxHeight="250" MinHeight="150">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <Grid Grid.Row="0" Grid.Column="0">
-                <GroupBox Header="Настройки" Margin="10" IsEnabled="{Binding IsStopped}">
+                <GroupBox Header="Настройки" Margin="10, 10 ,10 ,0" IsEnabled="{Binding IsStopped}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3*"/>
@@ -67,25 +67,31 @@
             </Grid>
 
             <Grid Grid.Row="0" Grid.Column="1">
-                <GroupBox Header="Данные" Margin="10"  IsEnabled="{Binding IsMaskEnabled}">
-                    <xctk:MaskedTextBox Mask="{Binding DataMask}" Text="{Binding DataMaskValue}" RestrictToAscii="True" Margin="3" >
-                    </xctk:MaskedTextBox>
-                                        
-                </GroupBox>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="52"></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <GroupBox Grid.Row="0" Header="Данные" Margin="0, 10 ,0 ,0" IsEnabled="{Binding IsMaskEnabled}">
+                        <xctk:MaskedTextBox Mask="{Binding DataMask}" Text="{Binding DataMaskValue}" RestrictToAscii="True" />
+                    </GroupBox>
+                    <GroupBox  Grid.Row="1" Header="Посылка">
+                        <TextBox Text="{Binding PackageText}" FontFamily="Courier New" IsReadOnly="True" TextWrapping="Wrap"></TextBox>
+                    </GroupBox>
+                </Grid>
             </Grid>
         </Grid>
-        <Grid Grid.Row="1" Grid.Column="0" MaxHeight="150">
-            <GroupBox Header="Ответ сервера" Width="300" Margin="10">
-                <TextBox IsReadOnly="True" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Center" 
-                         TextAlignment="Center" FontSize="30" Width="200" Height="50">
-                    AA
+        <Grid Grid.Row="1" Grid.Column="0" MaxHeight="100" VerticalAlignment="Center">
+            <GroupBox Header="Ответ сервера" Width="300" Margin="10" >
+                <TextBox Text="{Binding ResultText}" IsReadOnly="True" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                         TextAlignment="Center" FontSize="30" Width="150" Height="40">
                 </TextBox>
             </GroupBox>
         </Grid>
-        <Grid Grid.Row="2" Grid.Column="0" MaxHeight="150">
+        <Grid Grid.Row="2" Grid.Column="0" MaxHeight="150" VerticalAlignment="Top">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Command="{Binding StartCommand}" FontSize="25" Margin="5, 5, 30, 5" Width="200" Height="50">Старт</Button>
-                <Button Command="{Binding StopCommand}" FontSize="25" Margin="30, 5, 5, 5"  Width="200" Height="50">Стоп</Button>
+                <Button Command="{Binding StartCommand}" FontSize="25" Margin="5, 5, 5, 5" Width="200" Height="40">Старт</Button>
+                <Button Command="{Binding StopCommand}" FontSize="25" Margin="5, 5, 5, 5"  Width="200" Height="40">Стоп</Button>
             </StackPanel>
         </Grid>
     </Grid>

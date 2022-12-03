@@ -9,12 +9,15 @@ namespace Client.Services
         public string ToHex(byte[] bytes)
         {
             StringBuilder sb = new StringBuilder();
-            foreach (var item in bytes)
+            for(int i = 0; i < bytes.Length; i++)
             {
-                string hex = item.ToString("X");
+                string hex = bytes[i].ToString("X");
                 if (hex.Length == 1)
                     hex = "0" + hex;
-                sb.Append(hex + " ");
+                if(i == bytes.Length - 1)
+                    sb.Append(hex);
+                else
+                    sb.Append(hex + " ");
             }
             return sb.ToString().Trim();
         }
@@ -25,7 +28,8 @@ namespace Client.Services
             byte[] bytes = new byte[listOfHex.Length];
             for (int i = 0; i < listOfHex.Length; i++)
             {
-                bytes[i] = Convert.ToByte(listOfHex[i], 16);
+                if(listOfHex[i] != "")
+                    bytes[i] = Convert.ToByte(listOfHex[i], 16);
             }
             return bytes;
         }

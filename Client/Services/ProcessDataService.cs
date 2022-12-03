@@ -9,9 +9,17 @@ namespace Client.Services
 {
     public class ProcessDataService : IProcessDataService
     {
-        public bool GetBytes(string data, out byte[] bytes, int settingsSize, out string ErrorMessage)
+        public bool GetBytes(string data, out byte[] bytes, int settingsSize, out string errorMessage, IHexConverterService hexConverterService)
         {
-            throw new NotImplementedException();
+            if(!CheckData(data, settingsSize, out string message))
+            {
+                errorMessage = message;
+                bytes = null;
+                return false;
+            }
+            errorMessage = "";
+            bytes = hexConverterService.ToBytes(data);
+            return true;
         }
 
         public bool CheckData(string data, int settingsSize, out string ErrorMessage)

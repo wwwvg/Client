@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:prism="http://prismlibrary.com/"
         prism:ViewModelLocator.AutoWireViewModel="True"
-        Title="{Binding Title}" Height="500" Width="800" >
+        Title="{Binding Title}" Height="550" Width="850" >
     <DockPanel>
         <ContentControl prism:RegionManager.RegionName="StatusBarRegion" DockPanel.Dock="Bottom"/>
         <ContentControl prism:RegionManager.RegionName="ContentRegion" />

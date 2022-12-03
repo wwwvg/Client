@@ -12,20 +12,24 @@ using System;
 using Prism.Events;
 using Client.Events;
 using Client.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace Client.ViewModels
 {
     public class ContentViewModel : BindableBase
     {
-        public const int MaxBytes = 256;
+        public const int MaxBytes = 255;
         private IEventAggregator _eventAggregator;
         private IProcessDataService _processDataService;
         private ITrashGeneratorService _trashGeneratorService;
+        private IHexConverterService _hexConverterService;
 
-        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService, ITrashGeneratorService trashGeneratorService)  // IProcessDataService - зарегистрирован в App.xaml.cs
+        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService, 
+                                                                  ITrashGeneratorService trashGeneratorService,
+                                                                  IHexConverterService hexConverterService)  // все сервисы зарегистрированы в App.xaml.cs
         {
             _eventAggregator = eventAggregator;
-
+            _hexConverterService = hexConverterService;
             _processDataService = processDataService;
             _trashGeneratorService = trashGeneratorService;
 
@@ -37,6 +41,12 @@ namespace Client.ViewModels
         }
 
         #region Properties
+        private string _resultText;
+        public string ResultText { get => _resultText; set => SetProperty(ref _resultText, value); }
+
+        private string _packageText;
+        public string PackageText { get => _packageText; set => SetProperty(ref _packageText, value); }
+
         private string _dataMask; // маска для ввода данных, генерируется в зависимости от кол-ва байт данных;
         public string DataMask { get => _dataMask; set => SetProperty(ref _dataMask, value); }
 
@@ -99,36 +109,48 @@ namespace Client.ViewModels
         public DelegateCommand StartCommand => _startCommand ?? (_startCommand = new DelegateCommand(ExecuteStartCommand))
                                                                                                             .ObservesCanExecute(() => IsStopped);
 
-        public void ExecuteStartCommand()
+        async public void ExecuteStartCommand()
         {
 
             bool b = _processDataService.CheckData(DataMaskValue, Bytes[SelectedIndexData], out string errorMessage);
             if (b)
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Данные верны"));
             else
+            {
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
+                return;
+            }
 
-            byte[] bytes = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash1]);
+            byte[] bytes1 = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash1]);
+            byte[] bytes2 = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash2]);
+
+            if(_processDataService.GetBytes(DataMaskValue, out byte[] bytesData, Bytes[SelectedIndexData], out string message, _hexConverterService))
+                PackageText = $"{_hexConverterService.ToHex(bytes1)} {_hexConverterService.ToHex(bytesData)} {_hexConverterService.ToHex(bytes2)}";
+            else
+                PackageText = $"{_hexConverterService.ToHex(bytes1)} {_hexConverterService.ToHex(bytes2)}";
 
             //IsStarted = true;
             //IsStopped = false;
             //IsMaskEnabled = false;
+            ResultText = "";
+            byte[] packageBytes = new byte[MaxBytes];
+            packageBytes = bytesData;
 
-            //using (TcpClient client = new TcpClient("localhost", 51111))
-            //using (NetworkStream n = client.GetStream())
-            //{
-            //    BinaryWriter w = new BinaryWriter(n);
-            //    byte[] data = new byte[5000];
-            //    for (int i = 0; i < data.Length; i++)
-            //    {
-            //        data[i] = (byte)(i%256);
-            //    }
-            //    w.Write(data);
-            //    w.Flush();
+            ResultText = await SendData(bytesData);
+        }
 
-            //    data  = new BinaryReader(n).ReadBytes(50006);
-            //}
+        async Task<string> SendData(byte[] data)
+        {
+            using TcpClient tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync("localhost", 55555);
 
+            var stream = tcpClient.GetStream();
+            await stream.WriteAsync(data);
+            int lowByte = stream.ReadByte();
+            int highByte = stream.ReadByte() * 256;
+            if (lowByte == -1 || highByte == -1)
+                return "";
+            return (lowByte + highByte).ToString("X");
         }
 
         private DelegateCommand _stopCommand;       // СТОП

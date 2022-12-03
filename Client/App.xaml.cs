@@ -21,6 +21,7 @@ namespace Client
             containerRegistry.RegisterSingleton<IProcessDataService, ProcessDataService>();
             containerRegistry.RegisterSingleton<ITrashGeneratorService, TrashGeneratorService>();
             containerRegistry.RegisterSingleton<IHexConverterService, HexConverterService>();
+            containerRegistry.RegisterSingleton<ITrashGeneratorService, TrashGeneratorService>();
         }
     }
 }
