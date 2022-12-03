@@ -14,7 +14,7 @@ namespace Client.Services
             byte[] bytes = new byte[amount];
             for (int i = 0; i < amount; i++)
             {
-                bytes[i] = (byte)GiveMeANumber(0 , 255, 10, 11);
+                bytes[i] = (byte)GiveMeANumber(0 , 255, 10, 11);  // 0xA = 10, 0xB = 11
             }
             return bytes;
         }
