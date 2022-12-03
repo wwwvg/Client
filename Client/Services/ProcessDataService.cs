@@ -18,7 +18,7 @@ namespace Client.Services
                 return false;
             }
             errorMessage = "";
-            bytes = hexConverterService.ToBytes(data);
+            bytes = hexConverterService.ToBytes(data, settingsSize);
             return true;
         }
 
@@ -40,11 +40,18 @@ namespace Client.Services
                 }
 
             data = data.Replace(" ", "");
-            if (data.Length != settingsSize * 2) // если маска не до конца заполнена (были пробелы вместо значений)
+            //if (data.Length != settingsSize * 2) // если маска не до конца заполнена (были пробелы вместо значений)
+            if (data.Length%2 != 0) // если маска не до конца заполнена (были пробелы вместо значений)
             {
-                ErrorMessage = "Маска заполнена не полностью либо присутствуют пробелы на месте значений";
+                ErrorMessage = "Количество символов нечетное";
                 return false;
             }
+            if (data.Length < settingsSize * 2) // если маска не до конца заполнена (были пробелы вместо значений)
+            {
+                ErrorMessage = $"Отправляются первые {data.Length} байт данных";
+                return true;
+            }
+
             ErrorMessage = "";
             return true;
         }

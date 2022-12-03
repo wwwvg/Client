@@ -105,7 +105,7 @@ namespace Client.ViewModels
         public void OnDataComboBoxSelected()
         {
             SetFreeBytesText();
-            GenerateDataMask();
+            //GenerateDataMask();
         }
 
         private DelegateCommand _startCommand;      // СТАРТ
@@ -113,11 +113,12 @@ namespace Client.ViewModels
                                                                                                             .ObservesCanExecute(() => IsStopped);
 
         async public void ExecuteStartCommand()
-        {          
+        {
+            if (FreeBytesAmount() < 1)
+                return;
 
             IsStarted = true;
             IsStopped = false;
-            //IsMaskEnabled = false;
             ResultText = "";
 
             _timer.Tick += OnTimerTick;
@@ -125,37 +126,20 @@ namespace Client.ViewModels
             _timer.Start();
         }
 
-        async void OnTimerTick(object sender, EventArgs args)
+        private DelegateCommand _stopCommand;       // СТОП
+        public DelegateCommand StopCommand => _stopCommand ?? (_stopCommand = new DelegateCommand(ExecuteStopCommand))
+                                                                                                            .ObservesCanExecute(() => IsStarted);
+        public void ExecuteStopCommand()
         {
-            //ResultText = "";
-            bool b = _processDataService.CheckData(DataMaskValue, Bytes[SelectedIndexData], out string errorMessage);
-            if (b)
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Данные верны"));
-            else
-            {
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
-                return;
-            }
-
-            byte[] bytes1 = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash1]);
-            byte[] bytes2 = _trashGeneratorService.GetBytes(Bytes[SelectedIndexTrash2]);
-
-            if (_processDataService.GetBytes(DataMaskValue, out byte[] bytesData, Bytes[SelectedIndexData], out string message, _hexConverterService))
-                PackageText = $"{_hexConverterService.ToHex(bytes1)} {_hexConverterService.ToHex(bytesData)} {_hexConverterService.ToHex(bytes2)}";
-            else
-                PackageText = $"{_hexConverterService.ToHex(bytes1)} {_hexConverterService.ToHex(bytes2)}";
-
-            try
-            {
-                ResultText = await SendData(bytesData);
-            }
-            catch(SocketException ex)
-            {
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{ex.Message}"));
-            }
+            _timer.Stop();
+            IsStopped = true;
+            IsStarted = false;
+            if (DataMaskValue?.Length > 0)
+                IsMaskEnabled = true;
         }
+        #endregion
 
-
+        #region Methods
         async Task<string> SendData(byte[] data)
         {
             using TcpClient tcpClient = new TcpClient();
@@ -170,21 +154,27 @@ namespace Client.ViewModels
             return (lowByte + highByte).ToString("X");
         }
 
-        private DelegateCommand _stopCommand;       // СТОП
-        public DelegateCommand StopCommand => _stopCommand ?? (_stopCommand = new DelegateCommand(ExecuteStopCommand))
-                                                                                                            .ObservesCanExecute(() => IsStarted);
-
-        public void ExecuteStopCommand()
+        byte[] CreatePackageText()
         {
-            _timer.Stop();
-            IsStopped = true;
-            IsStarted = false;
-            if (DataMaskValue?.Length > 0)
-                IsMaskEnabled = true;
-        }
-        #endregion
+            PackageText = "";
+            byte[] bytes1, bytes2;
 
-        #region Methods
+            if (SelectedIndexTrash1 != 0)
+            {
+                bytes1 = _trashGeneratorService.GetBytes(SelectedIndexTrash1);
+                PackageText = $"{_hexConverterService.ToHex(bytes1)} ";
+            }
+
+            if (_processDataService.GetBytes(DataMaskValue, out byte[] bytesData, SelectedIndexData, out string message, _hexConverterService) && SelectedIndexData != 0 && bytesData != null)
+                PackageText += $"*{_hexConverterService.ToHex(bytesData)}* ";
+
+            if (SelectedIndexTrash2 != 0)
+            {
+                bytes2 = _trashGeneratorService.GetBytes(SelectedIndexTrash2);
+                PackageText += $"{_hexConverterService.ToHex(bytes2)}";
+            }
+            return bytesData;
+        }
 
         private int FreeBytesAmount()
         {
@@ -196,16 +186,15 @@ namespace Client.ViewModels
             int amount = FreeBytesAmount();
             if (amount < 0)
             {
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"Уменьшите количество байтов на {-amount}"));
-                IsMaskEnabled = false;
+                _timer?.Stop();
+                FreeBytesMessage = $"Уменьшите количество байтов на {-amount}";
             }
             else
             {
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Количество оставшихся байтов: {amount}"));
-                IsMaskEnabled = true;
+                FreeBytesMessage = $"Количество оставшихся байтов: {amount}";
             }
         }
-
+/*
         private void GenerateDataMask()
         {
             int numberOfBytes = Bytes[SelectedIndexData];
@@ -218,17 +207,36 @@ namespace Client.ViewModels
                     maskBuilder.Append(">A>A");
             }
             DataMask = maskBuilder.ToString();
-
-            if (numberOfBytes > 0)
-                IsMaskEnabled = true;
-            else
-                IsMaskEnabled = false;
         }
-
+*/
         #endregion
 
         #region Event Handlers
+        async void OnTimerTick(object sender, EventArgs args)
+        {
+            //ResultText = "";
+            bool b = _processDataService.CheckData(DataMaskValue, Bytes[SelectedIndexData], out string errorMessage);
+            if (b)
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"{errorMessage}"));
+            else
+            {
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
+                return;
+            }
 
+            byte[] bytesData = CreatePackageText();
+            if (bytesData is null)
+                return;
+
+            try
+            {
+                ResultText = await SendData(bytesData);
+            }
+            catch (SocketException ex)
+            {
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{ex.Message}"));
+            }
+        }
         #endregion  
     }
 }

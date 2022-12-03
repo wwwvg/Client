@@ -1,5 +1,6 @@
 ﻿using Client.Services.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Client.Services
@@ -22,14 +23,33 @@ namespace Client.Services
             return sb.ToString().Trim();
         }
 
-        public byte[] ToBytes(string hexNumbers, string separator = " ")
+        public byte[] ToBytes(string hexNumbers, int lenght, string separator = " ")
         {
-            var listOfHex = hexNumbers.Split(separator);
-            byte[] bytes = new byte[listOfHex.Length];
-            for (int i = 0; i < listOfHex.Length; i++)
+            if (hexNumbers.Replace(" ", "") == String.Empty || lenght == 0)
+                return null;
+
+            string compressed = hexNumbers.Replace(" ", "").Replace(",", "").Replace("/", "").Replace(".", "").Replace("*", "");
+            if(compressed.Length % 2 != 0)
+                return null;
+
+            var queue = new Queue<char>();
+            foreach(var s in compressed)
+                queue.Enqueue(s);
+
+            var bytes = new byte[lenght];
+            for (int i = 0; i < lenght; i++)
             {
-                if(listOfHex[i] != "")
-                    bytes[i] = Convert.ToByte(listOfHex[i], 16);
+
+                try
+                {
+                    string ab = $"{queue.Dequeue()}{queue.Dequeue()}";
+                    bytes[i] = Convert.ToByte(ab, 16);
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+
             }
             return bytes;
         }

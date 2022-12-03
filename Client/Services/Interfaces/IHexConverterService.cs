@@ -3,6 +3,6 @@
     public interface IHexConverterService
     {
         string ToHex(byte[] bytes);
-        byte[] ToBytes(string hexNumbers, string separator = " ");
+        byte[] ToBytes(string hexNumbers, int lenght, string separator = " ");
     }
 }
