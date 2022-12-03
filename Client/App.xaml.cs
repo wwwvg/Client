@@ -1,4 +1,6 @@
-﻿using Client.Views;
+﻿using Client.Services;
+using Client.Services.Interfaces;
+using Client.Views;
 using Prism.Ioc;
 using System.Windows;
 
@@ -16,7 +18,7 @@ namespace Client
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
-
+            containerRegistry.RegisterSingleton<IProcessDataService, ProcessDataService>();
         }
     }
 }

@@ -11,6 +11,7 @@ using System.IO;
 using System;
 using Prism.Events;
 using Client.Events;
+using Client.Services.Interfaces;
 
 namespace Client.ViewModels
 {
@@ -18,10 +19,12 @@ namespace Client.ViewModels
     {
         public const int MaxBytes = 256;
         private IEventAggregator _eventAggregator;
+        private IProcessDataService _processDataService;
 
-        public ContentViewModel(IEventAggregator eventAggregator)
+        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService)  // IProcessDataService - зарегистрирован в App.xaml.cs
         {
             _eventAggregator = eventAggregator;
+            _processDataService = processDataService;
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
             IsStarted = false;
             IsStopped = true;
@@ -93,9 +96,16 @@ namespace Client.ViewModels
 
         public void ExecuteStartCommand()
         {
-            IsStarted = true;
-            IsStopped = false;
-            IsMaskEnabled = false;
+
+            bool b = _processDataService.CheckData(DataMaskValue, Bytes[SelectedIndexData], out string errorMessage);
+            if (b)
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Данные верны"));
+            else
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
+
+            //IsStarted = true;
+            //IsStopped = false;
+            //IsMaskEnabled = false;
 
             //using (TcpClient client = new TcpClient("localhost", 51111))
             //using (NetworkStream n = client.GetStream())
@@ -108,7 +118,7 @@ namespace Client.ViewModels
             //    }
             //    w.Write(data);
             //    w.Flush();
-                
+
             //    data  = new BinaryReader(n).ReadBytes(50006);
             //}
 
@@ -137,10 +147,16 @@ namespace Client.ViewModels
         private void SetFreeBytesText()
         {
             int amount = FreeBytesAmount();
-            if(amount < 0)
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"Уменьшите количество байтов на {amount}"));
+            if (amount < 0)
+            {
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"Уменьшите количество байтов на {-amount}"));
+                IsMaskEnabled = false;
+            }
             else
+            {
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Количество оставшихся байтов: {amount}"));
+                IsMaskEnabled = true;
+            }
         }
 
         private void GenerateDataMask()
