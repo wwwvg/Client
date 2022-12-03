@@ -9,16 +9,19 @@ using System.Windows.Input;
 using System.Net.Sockets;
 using System.IO;
 using System;
+using Prism.Events;
+using Client.Events;
 
 namespace Client.ViewModels
 {
     public class ContentViewModel : BindableBase
     {
         public const int MaxBytes = 256;
-        
-      
-        public ContentViewModel()
+        private IEventAggregator _eventAggregator;
+
+        public ContentViewModel(IEventAggregator eventAggregator)
         {
+            _eventAggregator = eventAggregator;
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
             IsStarted = false;
             IsStopped = true;
@@ -94,20 +97,20 @@ namespace Client.ViewModels
             IsStopped = false;
             IsMaskEnabled = false;
 
-            using (TcpClient client = new TcpClient("localhost", 51111))
-            using (NetworkStream n = client.GetStream())
-            {
-                BinaryWriter w = new BinaryWriter(n);
-                byte[] data = new byte[5000];
-                for (int i = 0; i < data.Length; i++)
-                {
-                    data[i] = (byte)(i%256);
-                }
-                w.Write(data);
-                w.Flush();
+            //using (TcpClient client = new TcpClient("localhost", 51111))
+            //using (NetworkStream n = client.GetStream())
+            //{
+            //    BinaryWriter w = new BinaryWriter(n);
+            //    byte[] data = new byte[5000];
+            //    for (int i = 0; i < data.Length; i++)
+            //    {
+            //        data[i] = (byte)(i%256);
+            //    }
+            //    w.Write(data);
+            //    w.Flush();
                 
-                data  = new BinaryReader(n).ReadBytes(50006);
-            }
+            //    data  = new BinaryReader(n).ReadBytes(50006);
+            //}
 
         }
 
@@ -135,9 +138,9 @@ namespace Client.ViewModels
         {
             int amount = FreeBytesAmount();
             if(amount < 0)
-                FreeBytesMessage = $"Ошибка! Уменьшите количество байтов на: {-amount}";
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"Уменьшите количество байтов на {amount}"));
             else
-                FreeBytesMessage = $"Количество оставшихся байтов: {amount}";
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"Количество оставшихся байтов: {amount}"));
         }
 
         private void GenerateDataMask()

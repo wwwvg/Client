@@ -39,9 +39,15 @@ namespace Client.ViewModels
         private void SetWarningIcon(bool isError)
         {
             if (isError)
+            {
                 WarningIcon = new BitmapImage(new Uri("/Client;component/Icons/Warning.png", UriKind.Relative));
+                IsError = true;
+            }
             else
+            {
                 WarningIcon = new BitmapImage();
+                IsError = false;
+            }
         }
         #endregion
 
