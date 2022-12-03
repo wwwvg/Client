@@ -12,6 +12,7 @@ namespace Client.Views
         {
             InitializeComponent();
             regionManager.RegisterViewWithRegion("ContentRegion", typeof(ContentView));
+            regionManager.RegisterViewWithRegion("StatusBarRegion", typeof(StatusBarView));
         }
     }
 }

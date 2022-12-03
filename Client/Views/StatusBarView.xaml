@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="Client.Views.StatusBarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:prism="http://prismlibrary.com/"             
+             prism:ViewModelLocator.AutoWireViewModel="True">
+    
+    <UserControl.Resources>
+        <Style x:Key="ProhibitedSymbols" TargetType="TextBlock">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Path=IsError}" 
+                     Value="True">
+                    <Setter Property="Foreground" Value="Red"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        
+        <Label Grid.Column="0" Content="{Binding ConnectionStatus}"></Label>
+        
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Height="20">
+            <Image Source="{Binding WarningIcon}" Height="13"/>
+            <TextBlock Text="{Binding Message}" Style="{StaticResource ProhibitedSymbols}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+        </StackPanel>
+        
+    </Grid>
+</UserControl>

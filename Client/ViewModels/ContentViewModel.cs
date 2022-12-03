@@ -6,6 +6,9 @@ using System.Windows.Documents;
 using Prism.Commands;
 using System.Text;
 using System.Windows.Input;
+using System.Net.Sockets;
+using System.IO;
+using System;
 
 namespace Client.ViewModels
 {
@@ -90,6 +93,21 @@ namespace Client.ViewModels
             IsStarted = true;
             IsStopped = false;
             IsMaskEnabled = false;
+
+            using (TcpClient client = new TcpClient("localhost", 51111))
+            using (NetworkStream n = client.GetStream())
+            {
+                BinaryWriter w = new BinaryWriter(n);
+                byte[] data = new byte[5000];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    data[i] = (byte)(i%256);
+                }
+                w.Write(data);
+                w.Flush();
+                
+                data  = new BinaryReader(n).ReadBytes(50006);
+            }
 
         }
 
