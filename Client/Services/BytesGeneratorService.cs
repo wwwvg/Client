@@ -10,15 +10,15 @@ namespace Client.Services
 {
     public class BytesGeneratorService : IBytesGeneratorService
     {
-        public byte[] GetBytes(int amount)
-        {
-            byte[] bytes = new byte[amount];
-            for (int i = 0; i < amount; i++)
-            {
-                bytes[i] = (byte)GiveMeANumber(0 , 255, 10, 11);  // 0xA = 10, 0xB = 11   -   стартовый и стоповый байты
-            }
-            return bytes;
-        }
+        //public byte[] GetBytes(int amount)
+        //{
+        //    byte[] bytes = new byte[amount];
+        //    for (int i = 0; i < amount; i++)
+        //    {
+        //        bytes[i] = (byte)GiveMeANumber(0 , 255, 10, 11);  // 0xA = 10, 0xB = 11   -   стартовый и стоповый байты
+        //    }
+        //    return bytes;
+        //}
 
         public byte[] GetBytes(int trashLenght1, byte[] data, int trashLenght2)
         {
@@ -42,6 +42,17 @@ namespace Client.Services
             for (int i = trashLenght1 + data.Length; i < trashLenght2 + trashLenght1 + data.Length; i++)   // мусор в конце
                 bytes[i] = (byte)GiveMeANumber(0, 255, 10, 11);  // 0xA = 10, 0xB = 11
 
+            return bytes;
+        }
+
+        public byte[] GetBytes(int lenght)
+        {
+            byte[] bytes = new byte[lenght];
+
+            for (int i = 0; i < lenght; i++) // данные
+            {
+                bytes[i] = (byte)GiveMeANumber(0, 255);
+            }
             return bytes;
         }
 

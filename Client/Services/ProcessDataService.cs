@@ -49,7 +49,7 @@ namespace Client.Services
             if (data.Length < settingsSize * 2) // если маска не до конца заполнена (были пробелы вместо значений)
             {
                 ErrorMessage = $"Маска неправильно заполнена";
-                return true;
+                return false;
             }
 
             ErrorMessage = "";

@@ -21,11 +21,14 @@ namespace Client.ViewModels
     public class ContentViewModel : BindableBase
     {
         public const int MaxBytes = 255;
+        int _numberOfRequests = 0;
+        int _numberOfResponses = 0;
         DispatcherTimer _timer = new DispatcherTimer(); 
-        private IEventAggregator _eventAggregator;          //  для отправки сообщений в статус бар
-        private IProcessDataService _processDataService;        // проверка вводимых данных и преобразование их в байты
-        private IBytesGeneratorService _bytesGeneratorService;   //  генератор случайных байтов и создатель пакета для отправки
-        private IHexConverterService _hexConverterService;      // преобразование байтов в строковое представление
+
+        IEventAggregator _eventAggregator;          //  для отправки сообщений в статус бар
+        IProcessDataService _processDataService;        // проверка вводимых данных и преобразование их в байты
+        IBytesGeneratorService _bytesGeneratorService;   //  генератор случайных байтов и создатель пакета для отправки
+        IHexConverterService _hexConverterService;      // преобразование байтов в строковое представление
 
         public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService, 
                                                                   IBytesGeneratorService bytesGeneratorService,
@@ -39,6 +42,8 @@ namespace Client.ViewModels
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
             IsStarted = false;
             IsStopped = true;
+            _isRandomCheckBoxEnabled = false;
+            _isRandomData = false;
         }
 
         #region Properties
@@ -72,9 +77,24 @@ namespace Client.ViewModels
 
         private int _selectedIndexData; // выбранный индекс в 3-тьем комбобоксе для подсчета доступных байт
         public int SelectedIndexData { get => _selectedIndexData; set => SetProperty(ref _selectedIndexData, value); }
+
+        private bool _isRandomCheckBoxEnabled;
+        public bool IsRandomCheckBoxEnabled { get => _isRandomCheckBoxEnabled; set => SetProperty(ref _isRandomCheckBoxEnabled, value); }
+
+        private bool _isRandomData;
+        public bool IsRandomData { get => _isRandomData; set => SetProperty(ref _isRandomData, value); }
+
+        private bool _isExtraBytesSelected;
+        public bool IsExtraBytesSelected { get => _isExtraBytesSelected; set => SetProperty(ref _isExtraBytesSelected, value); }
+
+        private bool _isIncorrectInput;
+        public bool IsIncorrectInput { get => _isIncorrectInput; set => SetProperty(ref _isIncorrectInput, value); }
+
+        private string _controlSum;
+        public string ControlSum { get => _controlSum; set => SetProperty(ref _controlSum, value); }
         #endregion
 
-        #region Commands
+        #region Commands    
         private DelegateCommand _trashComboBoxSelected1; // ВЫБОР ЭЛЕМЕНТА В КОМБОБОКСЕ 1
         public DelegateCommand TrashComboBoxSelected1 => _trashComboBoxSelected1 ?? (_trashComboBoxSelected1 = new DelegateCommand(OnTrashComboBoxSelected1));
 
@@ -89,8 +109,9 @@ namespace Client.ViewModels
                                                                                                             .ObservesCanExecute(() => IsStopped);
         private DelegateCommand _stopCommand;       // СТОП
         public DelegateCommand StopCommand => _stopCommand ?? (_stopCommand = new DelegateCommand(ExecuteStopCommand))
-                                                                                                            .ObservesCanExecute(() => IsStarted);
-        #endregion
+                                                                                                          .ObservesCanExecute(() => IsStarted);
+
+        #endregion  
 
         #region Methods
         async Task<string> SendData(byte[] data)            //  отправка данных
@@ -119,12 +140,12 @@ namespace Client.ViewModels
             {
                 ExecuteStopCommand();
                 FreeBytesMessage = $"Уменьшите количество байтов на {-amount}";
+                IsExtraBytesSelected = true;
             }
             else
             {
-                //_isStarted = true;
-                //_isStopped = false;
                 FreeBytesMessage = $"Количество оставшихся байтов: {amount}";
+                IsExtraBytesSelected = false;
             }
         }
 
@@ -154,14 +175,28 @@ namespace Client.ViewModels
 
         async void OnTimerTick(object sender, EventArgs args)           //    ТАЙМЕР 
         {
-            //ResultText = "";
+            if (IsRandomData && !IsStopped)
+            {
+                _timer.Stop();
+                while (_numberOfRequests != _numberOfResponses)
+                    await Task.Delay(100);
+                await Task.Delay(1000);
+                var result = GetRandomData();
+                _timer.Start();
+                DataMaskValue = result.Item1;
+                ControlSum = result.Item2;
+            }
+
             bool isDataChecked = _processDataService.CheckData(DataMaskValue, SelectedIndexData, out string errorMessage); // проверка вводимых данных
             if (isDataChecked)
+            {
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"{errorMessage}"));
+                IsIncorrectInput = false;
+            }
             else
             {
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
-                //ExecuteStopCommand();
+                IsIncorrectInput = true;
                 return;
             }
             byte[] data = new byte[SelectedIndexData];
@@ -169,7 +204,6 @@ namespace Client.ViewModels
 
             if(data == null)
             {
-                //ExecuteStopCommand();
                 return;
             }
 
@@ -178,13 +212,15 @@ namespace Client.ViewModels
 
             if (package is null)            // если пустой пакет, то выход
             {
-                //ExecuteStopCommand();
                 return;
             }
 
             try
             {
-                ResultText = await SendData(package);       // вывод полученног от сервера результата
+                _numberOfRequests++;
+                ResultText = await SendData(package);       // вывод полученного от сервера результата
+                _numberOfResponses++;
+
             }
             catch (Exception ex)
             {
@@ -205,7 +241,31 @@ namespace Client.ViewModels
         public void OnDataComboBoxSelected()            // ВЫБОР В КОМБОБОКСЕ 3
         {
             SetFreeBytesText();
+            if(SelectedIndexData >= 3)
+                IsRandomCheckBoxEnabled = true;
+            else
+                IsRandomCheckBoxEnabled = false;
         }
+
+        (string, string) GetRandomData()
+        {
+            int lenght = SelectedIndexData - 2;
+            byte[] data = new byte[lenght];
+            data = _bytesGeneratorService.GetBytes(lenght);
+            string hex = _hexConverterService.ToHex(data);
+            return ("0a " + hex + " 0b", GetSum(data));
+        }
+
+        string GetSum(byte[] data)
+        {
+            int sum = 0;
+            for (int i = 0; i < data.Length; i++) // подсчет
+            {
+                sum += data[i];
+            }
+            return sum.ToString("X");
+        }
+
         #endregion  
     }
 }

@@ -9,6 +9,8 @@ namespace Client.Services
     {
         public string ToHex(byte[] bytes)
         {
+            if(bytes == null)
+                return string.Empty;
             StringBuilder sb = new StringBuilder();
             for(int i = 0; i < bytes.Length; i++)
             {
