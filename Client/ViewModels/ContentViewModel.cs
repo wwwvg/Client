@@ -22,25 +22,23 @@ namespace Client.ViewModels
     {
         public const int MaxBytes = 255;
         DispatcherTimer _timer = new DispatcherTimer(); 
-        private IEventAggregator _eventAggregator;
-        private IProcessDataService _processDataService;
-        private ITrashGeneratorService _trashGeneratorService;
-        private IHexConverterService _hexConverterService;
+        private IEventAggregator _eventAggregator;          //  для отправки сообщений в статус бар
+        private IProcessDataService _processDataService;        // проверка вводимых данных и преобразование их в байты
+        private IBytesGeneratorService _bytesGeneratorService;   //  генератор случайных байтов и создатель пакета для отправки
+        private IHexConverterService _hexConverterService;      // преобразование байтов в строковое представление
 
         public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService, 
-                                                                  ITrashGeneratorService trashGeneratorService,
+                                                                  IBytesGeneratorService bytesGeneratorService,
                                                                   IHexConverterService hexConverterService)  // все сервисы зарегистрированы в App.xaml.cs
         {
             _eventAggregator = eventAggregator;
             _hexConverterService = hexConverterService;
             _processDataService = processDataService;
-            _trashGeneratorService = trashGeneratorService;
+            _bytesGeneratorService = bytesGeneratorService;
 
             Bytes.AddRange(Enumerable.Range(0, MaxBytes));
             IsStarted = false;
             IsStopped = true;
-            _isMaskEnabled = false;
-            
         }
 
         #region Properties
@@ -50,14 +48,8 @@ namespace Client.ViewModels
         private string _packageText;
         public string PackageText { get => _packageText; set => SetProperty(ref _packageText, value); }
 
-        private string _dataMask; // маска для ввода данных, генерируется в зависимости от кол-ва байт данных;
-        public string DataMask { get => _dataMask; set => SetProperty(ref _dataMask, value); }
-
-        private string _dataMaskValue; // маска для ввода данных, генерируется в зависимости от кол-ва байт данных;
+        private string _dataMaskValue; // поле для ввода данных
         public string DataMaskValue { get => _dataMaskValue; set => SetProperty(ref _dataMaskValue, value); }
-
-        private bool _isMaskEnabled;
-        public bool IsMaskEnabled { get => _isMaskEnabled; set => SetProperty(ref _isMaskEnabled, value); }
 
         private bool _isStarted; // нажата ли кнопка старт. Свойство нужно для блокирования/разблокирования других кнопок
         public bool IsStarted { get => _isStarted; set => SetProperty(ref _isStarted, value); }
@@ -86,61 +78,22 @@ namespace Client.ViewModels
         private DelegateCommand _trashComboBoxSelected1; // ВЫБОР ЭЛЕМЕНТА В КОМБОБОКСЕ 1
         public DelegateCommand TrashComboBoxSelected1 => _trashComboBoxSelected1 ?? (_trashComboBoxSelected1 = new DelegateCommand(OnTrashComboBoxSelected1));
 
-        public void OnTrashComboBoxSelected1()
-        {
-            SetFreeBytesText();
-        }
-
         private DelegateCommand _trashComboBoxSelected2; // ВЫБОР ЭЛЕМЕНТА В КОМБОБОКСЕ 2
         public DelegateCommand TrashComboBoxSelected2 => _trashComboBoxSelected2 ?? (_trashComboBoxSelected2 = new DelegateCommand(OnTrashComboBoxSelected2));
-
-        public void OnTrashComboBoxSelected2()
-        {
-            SetFreeBytesText();
-        }
 
         private DelegateCommand _dataComboBoxSelected; // ВЫБОР ЭЛЕМЕНТА В КОМБОБОКСЕ 3
         public DelegateCommand DataComboBoxSelected => _dataComboBoxSelected ?? (_dataComboBoxSelected = new DelegateCommand(OnDataComboBoxSelected));
 
-        public void OnDataComboBoxSelected()
-        {
-            SetFreeBytesText();
-            //GenerateDataMask();
-        }
-
         private DelegateCommand _startCommand;      // СТАРТ
         public DelegateCommand StartCommand => _startCommand ?? (_startCommand = new DelegateCommand(ExecuteStartCommand))
                                                                                                             .ObservesCanExecute(() => IsStopped);
-
-        async public void ExecuteStartCommand()
-        {
-            if (FreeBytesAmount() < 1)
-                return;
-
-            IsStarted = true;
-            IsStopped = false;
-            ResultText = "";
-
-            _timer.Tick += OnTimerTick;
-            _timer.Interval = new TimeSpan(0, 0, 1);
-            _timer.Start();
-        }
-
         private DelegateCommand _stopCommand;       // СТОП
         public DelegateCommand StopCommand => _stopCommand ?? (_stopCommand = new DelegateCommand(ExecuteStopCommand))
                                                                                                             .ObservesCanExecute(() => IsStarted);
-        public void ExecuteStopCommand()
-        {
-            _timer.Stop();
-            IsStopped = true;
-            IsStarted = false;
-            if (DataMaskValue?.Length > 0)
-                IsMaskEnabled = true;
-        }
         #endregion
 
         #region Methods
-        async Task<string> SendData(byte[] data)
+        async Task<string> SendData(byte[] data)            //  отправка данных
         {
             using TcpClient tcpClient = new TcpClient();
             await tcpClient.ConnectAsync("localhost", 55555);
@@ -154,88 +107,104 @@ namespace Client.ViewModels
             return (lowByte + highByte).ToString("X");
         }
 
-        byte[] CreatePackageText()
-        {
-            PackageText = "";
-            byte[] bytes1, bytes2;
-
-            if (SelectedIndexTrash1 != 0)
-            {
-                bytes1 = _trashGeneratorService.GetBytes(SelectedIndexTrash1);
-                PackageText = $"{_hexConverterService.ToHex(bytes1)} ";
-            }
-
-            if (_processDataService.GetBytes(DataMaskValue, out byte[] bytesData, SelectedIndexData, out string message, _hexConverterService) && SelectedIndexData != 0 && bytesData != null)
-                PackageText += $"*{_hexConverterService.ToHex(bytesData)}* ";
-
-            if (SelectedIndexTrash2 != 0)
-            {
-                bytes2 = _trashGeneratorService.GetBytes(SelectedIndexTrash2);
-                PackageText += $"{_hexConverterService.ToHex(bytes2)}";
-            }
-            return bytesData;
-        }
-
         private int FreeBytesAmount()
         {
-            return MaxBytes - Bytes[SelectedIndexTrash1] - Bytes[SelectedIndexTrash2] - Bytes[SelectedIndexData] -1;
+            return MaxBytes - SelectedIndexTrash1 - SelectedIndexTrash2 - SelectedIndexData -1;
         }
 
-        private void SetFreeBytesText()
+        private void SetFreeBytesText()         // счетчик оставшихся байтов
         {
             int amount = FreeBytesAmount();
             if (amount < 0)
             {
-                _timer?.Stop();
+                ExecuteStopCommand();
                 FreeBytesMessage = $"Уменьшите количество байтов на {-amount}";
             }
             else
             {
+                //_isStarted = true;
+                //_isStopped = false;
                 FreeBytesMessage = $"Количество оставшихся байтов: {amount}";
             }
         }
-/*
-        private void GenerateDataMask()
-        {
-            int numberOfBytes = Bytes[SelectedIndexData];
-            var maskBuilder = new StringBuilder();
-            for (int i = 0; i < numberOfBytes; i++)
-            {
-                if (i != numberOfBytes - 1)
-                    maskBuilder.Append(">A>A ");
-                else
-                    maskBuilder.Append(">A>A");
-            }
-            DataMask = maskBuilder.ToString();
-        }
-*/
+
         #endregion
 
         #region Event Handlers
-        async void OnTimerTick(object sender, EventArgs args)
+        public void ExecuteStartCommand()                               //    СТАРТ
+        {
+            if (FreeBytesAmount() < 1)
+                return;
+
+            IsStarted = true;
+            IsStopped = false;
+            ResultText = "";
+
+            _timer.Tick += OnTimerTick;
+            _timer.Interval = new TimeSpan(0, 0, 1);
+            _timer.Start();
+        }
+
+        public void ExecuteStopCommand()                                //    СТОП
+        {
+            _timer.Stop();
+            IsStopped = true;
+            IsStarted = false;
+        }
+
+        async void OnTimerTick(object sender, EventArgs args)           //    ТАЙМЕР 
         {
             //ResultText = "";
-            bool b = _processDataService.CheckData(DataMaskValue, Bytes[SelectedIndexData], out string errorMessage);
-            if (b)
+            bool isDataChecked = _processDataService.CheckData(DataMaskValue, SelectedIndexData, out string errorMessage); // проверка вводимых данных
+            if (isDataChecked)
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((false, $"{errorMessage}"));
             else
             {
                 _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{errorMessage}"));
+                //ExecuteStopCommand();
+                return;
+            }
+            byte[] data = new byte[SelectedIndexData];
+            _processDataService.GetBytes(DataMaskValue, out data, SelectedIndexData, out string message, _hexConverterService); // поручение байтов данных
+
+            if(data == null)
+            {
+                //ExecuteStopCommand();
                 return;
             }
 
-            byte[] bytesData = CreatePackageText();
-            if (bytesData is null)
+            byte[] package = _bytesGeneratorService.GetBytes(SelectedIndexTrash1, data, SelectedIndexTrash2); // получение байтов посылки целиком
+            PackageText = _hexConverterService.ToHex(package);
+
+            if (package is null)            // если пустой пакет, то выход
+            {
+                //ExecuteStopCommand();
                 return;
+            }
 
             try
             {
-                ResultText = await SendData(bytesData);
+                ResultText = await SendData(package);       // вывод полученног от сервера результата
             }
-            catch (SocketException ex)
+            catch (Exception ex)
             {
-                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{ex.Message}"));
+                _eventAggregator.GetEvent<StatusBarMessage>().Publish((true, $"{ex.Message}")); // отправка сообщения об ошибки в статусбар
             }
+        }
+
+        public void OnTrashComboBoxSelected1()          // ВЫБОР В КОМБОБОКСЕ 1
+        {
+            SetFreeBytesText();
+        }
+
+        public void OnTrashComboBoxSelected2()          // ВЫБОР В КОМБОБОКСЕ 2
+        {
+            SetFreeBytesText();
+        }
+
+        public void OnDataComboBoxSelected()            // ВЫБОР В КОМБОБОКСЕ 3
+        {
+            SetFreeBytesText();
         }
         #endregion  
     }

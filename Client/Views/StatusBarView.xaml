@@ -23,7 +23,7 @@
         
         <Label Grid.Column="0" Content="{Binding ConnectionStatus}"></Label>
         
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Height="20">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Height="20" Margin="5">
             <Image Source="{Binding WarningIcon}" Height="13"/>
             <TextBlock Text="{Binding Message}" Style="{StaticResource ProhibitedSymbols}" VerticalAlignment="Center" Margin="5,0,0,0"/>
         </StackPanel>

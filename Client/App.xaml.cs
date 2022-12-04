@@ -19,9 +19,9 @@ namespace Client
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             containerRegistry.RegisterSingleton<IProcessDataService, ProcessDataService>();
-            containerRegistry.RegisterSingleton<ITrashGeneratorService, TrashGeneratorService>();
+            containerRegistry.RegisterSingleton<IBytesGeneratorService, BytesGeneratorService>();
             containerRegistry.RegisterSingleton<IHexConverterService, HexConverterService>();
-            containerRegistry.RegisterSingleton<ITrashGeneratorService, TrashGeneratorService>();
+            containerRegistry.RegisterSingleton<IBytesGeneratorService, BytesGeneratorService>();
         }
     }
 }

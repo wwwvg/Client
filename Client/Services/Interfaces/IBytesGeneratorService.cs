@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Client.Services.Interfaces
 {
-    public  interface ITrashGeneratorService
+    public  interface IBytesGeneratorService
     {
-        byte[] GetBytes(int amount);
+        byte[] GetBytes(int trashLenght1, byte[] data, int trashLenght2);
     }
 }
