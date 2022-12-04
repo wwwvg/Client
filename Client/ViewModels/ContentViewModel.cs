@@ -33,7 +33,7 @@ namespace Client.ViewModels
             _processDataService = processDataService;
             _bytesGeneratorService = bytesGeneratorService;
 
-            Bytes.AddRange(Enumerable.Range(0, MaxBytes));
+            Bytes.AddRange(Enumerable.Range(0, MaxBytes+1));
             IsStarted = false;
             IsStopped = true;
             _isRandomCheckBoxEnabled = false;
@@ -124,7 +124,7 @@ namespace Client.ViewModels
 
         private int FreeBytesAmount()
         {
-            return MaxBytes - SelectedIndexTrash1 - SelectedIndexTrash2 - SelectedIndexData - 1;
+            return MaxBytes - SelectedIndexTrash1 - SelectedIndexTrash2 - SelectedIndexData;
         }
 
         private void SetFreeBytesText()         // счетчик оставшихся байтов
@@ -148,7 +148,7 @@ namespace Client.ViewModels
         #region Event Handlers
         public void ExecuteStartCommand()                               //    СТАРТ
         {
-            if (FreeBytesAmount() < 1)
+            if (FreeBytesAmount() < 0)
                 return;
 
             IsStarted = true;
@@ -169,14 +169,23 @@ namespace Client.ViewModels
 
         async void OnTimerTick(object sender, EventArgs args)           //    ТАЙМЕР 
         {
+            #region экспериментальная часть
+            if (IsStopped)
+            {
+                _timer.Stop();
+                return;
+            }
             if (IsRandomData && !IsStopped)
             {
+                _timer.Stop();
                 while (_numberOfRequests != _numberOfResponses)
                     await Task.Delay(1000);
                 var result = GetRandomData();
                 DataMaskValue = result.Item1;
                 ControlSum = result.Item2;
+                _timer.Start();
             }
+            #endregion
 
             bool isDataChecked = _processDataService.CheckData(DataMaskValue, SelectedIndexData, out string errorMessage); // проверка вводимых данных
             if (isDataChecked)
