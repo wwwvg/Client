@@ -40,13 +40,13 @@ namespace Client.Services
                 }
 
             data = data.Replace(" ", "");
-            //if (data.Length != settingsSize * 2) // если маска не до конца заполнена (были пробелы вместо значений)
-            if (data.Length%2 != 0) // если маска не до конца заполнена (были пробелы вместо значений)
+
+            if (data.Length%2 != 0) 
             {
                 ErrorMessage = "Количество символов нечетное";
                 return false;
             }
-            if (data.Length < settingsSize * 2) // если маска не до конца заполнена (были пробелы вместо значений)
+            if (data.Length < settingsSize * 2) 
             {
                 ErrorMessage = $"Маска неправильно заполнена";
                 return false;

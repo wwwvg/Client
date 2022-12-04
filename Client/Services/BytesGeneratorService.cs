@@ -1,28 +1,15 @@
 ﻿using Client.Services.Interfaces;
 using Client.ViewModels;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Client.Services
 {
     public class BytesGeneratorService : IBytesGeneratorService
     {
-        //public byte[] GetBytes(int amount)
-        //{
-        //    byte[] bytes = new byte[amount];
-        //    for (int i = 0; i < amount; i++)
-        //    {
-        //        bytes[i] = (byte)GiveMeANumber(0 , 255, 10, 11);  // 0xA = 10, 0xB = 11   -   стартовый и стоповый байты
-        //    }
-        //    return bytes;
-        //}
-
         public byte[] GetBytes(int trashLenght1, byte[] data, int trashLenght2)
         {
-            if(data == null)
+            if (data == null)
                 return null;
 
             int totalLenght = trashLenght1 + data.Length + trashLenght2;
@@ -36,7 +23,7 @@ namespace Client.Services
 
             for (int i = trashLenght1; i < data.Length + trashLenght1; i++) // данные
             {
-                bytes[i] = data[i-trashLenght1];
+                bytes[i] = data[i - trashLenght1];
             }
 
             for (int i = trashLenght1 + data.Length; i < trashLenght2 + trashLenght1 + data.Length; i++)   // мусор в конце

@@ -51,7 +51,6 @@ namespace Client.Services
                 {
                     return null;
                 }
-
             }
             return bytes;
         }

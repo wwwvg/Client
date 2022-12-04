@@ -1,19 +1,13 @@
-﻿using System.Collections.Generic;
-using Prism.Mvvm;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Documents;
-using Prism.Commands;
-using System.Text;
-using System.Windows.Input;
-using System.Net.Sockets;
-using System.IO;
-using System;
-using Prism.Events;
-using Client.Events;
+﻿using Client.Events;
 using Client.Services.Interfaces;
+using Prism.Commands;
+using Prism.Events;
+using Prism.Mvvm;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
-using System.Threading;
 using System.Windows.Threading;
 
 namespace Client.ViewModels
@@ -23,14 +17,14 @@ namespace Client.ViewModels
         public const int MaxBytes = 255;
         int _numberOfRequests = 0;
         int _numberOfResponses = 0;
-        DispatcherTimer _timer = new DispatcherTimer(); 
+        DispatcherTimer _timer = new DispatcherTimer();
 
         IEventAggregator _eventAggregator;          //  для отправки сообщений в статус бар
         IProcessDataService _processDataService;        // проверка вводимых данных и преобразование их в байты
         IBytesGeneratorService _bytesGeneratorService;   //  генератор случайных байтов и создатель пакета для отправки
         IHexConverterService _hexConverterService;      // преобразование байтов в строковое представление
 
-        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService, 
+        public ContentViewModel(IEventAggregator eventAggregator, IProcessDataService processDataService,
                                                                   IBytesGeneratorService bytesGeneratorService,
                                                                   IHexConverterService hexConverterService)  // все сервисы зарегистрированы в App.xaml.cs
         {
@@ -130,7 +124,7 @@ namespace Client.ViewModels
 
         private int FreeBytesAmount()
         {
-            return MaxBytes - SelectedIndexTrash1 - SelectedIndexTrash2 - SelectedIndexData -1;
+            return MaxBytes - SelectedIndexTrash1 - SelectedIndexTrash2 - SelectedIndexData - 1;
         }
 
         private void SetFreeBytesText()         // счетчик оставшихся байтов
@@ -199,7 +193,7 @@ namespace Client.ViewModels
             byte[] data = new byte[SelectedIndexData];
             _processDataService.GetBytes(DataMaskValue, out data, SelectedIndexData, out string message, _hexConverterService); // поручение байтов данных
 
-            if(data == null)
+            if (data == null)
             {
                 return;
             }
@@ -238,7 +232,7 @@ namespace Client.ViewModels
         public void OnDataComboBoxSelected()            // ВЫБОР В КОМБОБОКСЕ 3
         {
             SetFreeBytesText();
-            if(SelectedIndexData >= 3)
+            if (SelectedIndexData >= 3)
                 IsRandomCheckBoxEnabled = true;
             else
                 IsRandomCheckBoxEnabled = false;
