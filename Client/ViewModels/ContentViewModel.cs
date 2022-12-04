@@ -177,12 +177,9 @@ namespace Client.ViewModels
         {
             if (IsRandomData && !IsStopped)
             {
-                _timer.Stop();
                 while (_numberOfRequests != _numberOfResponses)
-                    await Task.Delay(100);
-                await Task.Delay(1000);
+                    await Task.Delay(1000);
                 var result = GetRandomData();
-                _timer.Start();
                 DataMaskValue = result.Item1;
                 ControlSum = result.Item2;
             }
